@@ -20,6 +20,8 @@ namespace TurboSMSua.MySQL
 
             if (!string.IsNullOrEmpty(dataReader["number"].ToString()))
                 number = dataReader.GetString("number");
+            if (!string.IsNullOrEmpty(dataReader["message"].ToString()))
+                message = dataReader.GetString("message");
 
             if (!string.IsNullOrEmpty(dataReader["sign"].ToString()))
                 sign = dataReader.GetString("sign");

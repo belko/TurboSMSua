@@ -55,11 +55,6 @@ namespace TurboSMSua.MySQL
             }
             catch (MySqlException ex)
             {
-                //When handling errors, you can your application's response based 
-                //on the error number.
-                //The two most common error numbers when connecting are as follows:
-                //0: Cannot connect to server.
-                //1045: Invalid user name and/or password.
                 switch (ex.Number)
                 {
                     case 0:
@@ -100,9 +95,9 @@ namespace TurboSMSua.MySQL
                 send_time = DateTime.Now.AddMinutes(3).ToString(SMSModel.DateTimeFormat)
             };
             string query = string.Format(
-                "INSERT INTO {0} (number, message, sign, send_time) VALUES('{1}', '{2}', '{3}', '{4}'); "+
-                "SELECT LAST_INSERT_ID()",
-                turboSMSLogin,sms.number, sms.message, sms.sign, sms.send_time);
+                "INSERT INTO {0} (number, message, sign) VALUES('{1}', '{2}', '{3}'); "+
+                "SELECT LAST_INSERT_ID();",
+                turboSMSLogin,sms.number, sms.message, sms.sign);
 
             if (this.OpenConnection() == true)
             {
@@ -119,38 +114,30 @@ namespace TurboSMSua.MySQL
             return id;
         }
 
-        public List<SMSModel> GetSMSDetail(string number = null)
+        public List<SMSModel> GetSMSDetail(int? smsid = null)
         {
             string query = string.Format( "SELECT * FROM {0}", turboSMSLogin);
-            if (!string.IsNullOrEmpty(number)) 
+            if (smsid!=null) 
             {
-                query += string.Format(" where number = '{0}'", number);
+                query += string.Format(" where id = '{0}'", smsid);
             }
 
             List<SMSModel> list = new List<SMSModel>();
 
-            //Open connection
             if (this.OpenConnection() == true)
             {
-                //Create Command
                 MySqlCommand cmd = new MySqlCommand(query, connection);
-                //Create a data reader and Execute the command
                 MySqlDataReader dataReader = cmd.ExecuteReader();
 
-                //Read the data and store them in the list
                 while (dataReader.Read())
                 {
                     SMSModel sms = new SMSModel(dataReader);
                     list.Add(sms);
                 }
-
-                //close Data Reader
                 dataReader.Close();
 
-                //close Connection
                 this.CloseConnection();
 
-                //return list to be displayed
                 return list;
             }
             else
