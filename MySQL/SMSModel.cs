@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace TurboSMSua.MySQL
 {
+    ///data model
     public class SMSModel
     {
 
