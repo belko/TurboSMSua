@@ -1,55 +1,47 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
 
-namespace TurboSMSua.MySQL
+namespace Turbosms.Client.Models
 {
     public class SQLSMSSender
     {
-        private MySqlConnection connection;
-        public string exceptions;
-
-        private string turboSMSLogin;
-        private string turboSMSPassword;
-        private string turboSMSDataBase;
-        private string turboSMSServer;
+        public string Exceptions { get; set; }
+        
+        private MySqlConnection _connection;
+        private readonly string _login;
+        private readonly string _password;
+        private readonly string _database;
+        private readonly string _server;
 
         public SQLSMSSender(string server,string database, string login, string password)
         {
-            this.turboSMSServer = server;
-            this.turboSMSDataBase = database;
-            this.turboSMSLogin = login;
-            this.turboSMSPassword = password;
+            _server = server;
+            _database = database;
+            _login = login;
+            _password = password;
             
-            string connectionString = string.Format("SERVER={0};DATABASE={1};UID={2};PASSWORD={3};",
-                turboSMSServer, turboSMSDataBase,turboSMSLogin, turboSMSPassword);
+            var connectionString = $"SERVER={_server};DATABASE={_database};UID={_login};PASSWORD={_password};";
+            
             Initialize(connectionString);
         }
 
         public SQLSMSSender(string connectionString)
         {
-
             Initialize(connectionString);
         }
 
-
-
         private void Initialize(string connectionString)
         {
-
-            connection = new MySqlConnection(connectionString);
+            _connection = new MySqlConnection(connectionString);
         }
 
         private bool OpenConnection()
         {
             try
             {
-                connection.Open();
-                MySqlCommand cmdutf8 = new MySqlCommand("SET NAMES utf8;", connection);
+                _connection.Open();
+                MySqlCommand cmdutf8 = new MySqlCommand("SET NAMES utf8;", _connection);
                 cmdutf8.ExecuteNonQuery();
                 return true;
             }
@@ -58,11 +50,11 @@ namespace TurboSMSua.MySQL
                 switch (ex.Number)
                 {
                     case 0:
-                        exceptions = "Cannot connect to server.  Contact administrator";
+                        Exceptions = "Cannot connect to server.  Contact administrator";
                         break;
 
                     case 1045:
-                        exceptions = "Invalid username/password, please try again";
+                        Exceptions = "Invalid username/password, please try again";
                         break;
                 }
                 return false;
@@ -73,12 +65,12 @@ namespace TurboSMSua.MySQL
         {
             try
             {
-                connection.Close();
+                _connection.Close();
                 return true;
             }
             catch (MySqlException ex)
             {
-                exceptions = ex.Message;
+                Exceptions = ex.Message;
                 return false;
             }
         }
@@ -97,11 +89,11 @@ namespace TurboSMSua.MySQL
             string query = string.Format(
                 "INSERT INTO {0} (number, message, sign) VALUES('{1}', '{2}', '{3}'); "+
                 "SELECT LAST_INSERT_ID();",
-                turboSMSLogin,sms.number, sms.message, sms.sign);
+                _login,sms.number, sms.message, sms.sign);
 
             if (this.OpenConnection() == true)
             {
-                MySqlCommand cmd = new MySqlCommand(query, connection);
+                MySqlCommand cmd = new MySqlCommand(query, _connection);
 
                 try
                 {
@@ -116,7 +108,7 @@ namespace TurboSMSua.MySQL
 
         public List<SMSModel> GetSMSDetail(int? smsid = null)
         {
-            string query = string.Format( "SELECT * FROM {0}", turboSMSLogin);
+            string query = string.Format( "SELECT * FROM {0}", _login);
             if (smsid!=null) 
             {
                 query += string.Format(" where id = '{0}'", smsid);
@@ -126,7 +118,7 @@ namespace TurboSMSua.MySQL
 
             if (this.OpenConnection() == true)
             {
-                MySqlCommand cmd = new MySqlCommand(query, connection);
+                MySqlCommand cmd = new MySqlCommand(query, _connection);
                 MySqlDataReader dataReader = cmd.ExecuteReader();
 
                 while (dataReader.Read())
@@ -156,8 +148,8 @@ namespace TurboSMSua.MySQL
                     @"select balance from {0} 
                         where msg_id IS NOT NULL 
                         order by id desc
-                        LIMIT 1", turboSMSLogin);
-                MySqlCommand cmd = new MySqlCommand(query, connection);
+                        LIMIT 1", _login);
+                MySqlCommand cmd = new MySqlCommand(query, _connection);
                  try{
                      var val = cmd.ExecuteScalar().ToString();
                      balance =decimal.Parse(val);

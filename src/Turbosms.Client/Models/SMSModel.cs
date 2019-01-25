@@ -1,16 +1,15 @@
-﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
+using MySql.Data.MySqlClient;
 
-namespace TurboSMSua.MySQL
+namespace Turbosms.Client.Models
 {
     public class SMSModel
     {
 
-        public SMSModel() { }
+        public SMSModel()
+        {
+        }
+        
         public SMSModel(MySqlDataReader dataReader)
         {
             id = dataReader.GetInt32("id");
@@ -53,13 +52,19 @@ namespace TurboSMSua.MySQL
         /// read only
         /// </summary>
         public int id { get; set; }
+        
         //read
         public string msg_id { get; set; }
+        
         public string number { get; set; }
+        
         public string sign { get; set; }
+        
         public string message { get; set; }
+        
         //read
         public decimal cost { get; set; }
+        
         //read
         public decimal balance { get; set; }
 
@@ -69,6 +74,7 @@ namespace TurboSMSua.MySQL
         public string send_time { get; set; }
 
         public DateTime SendTime { get; set; }
+        
         //read
         public string sended { get; set; }
 
@@ -76,11 +82,14 @@ namespace TurboSMSua.MySQL
 
         //read
         public string received { get; set; }
+        
         public DateTime Received { get; private set; }
+        
         //read
         public string error_code { get; set; }
 
         private string _status;
+        
         //read
         public string status
         {
@@ -159,7 +168,5 @@ namespace TurboSMSua.MySQL
                 return detail;
             }
         }
-
-        
     }
 }
