@@ -1,3 +1,3 @@
 # TurboSMSua
 
-Library for interacting with turbosms.ua service
+Library for interacting with https://turbosms.ua service
