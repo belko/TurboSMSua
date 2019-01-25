@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 
-namespace Turbosms.Client
+namespace Turbosms.Client.Senders
 {
     public class SqlSender : ISender
     {
