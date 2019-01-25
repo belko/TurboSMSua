@@ -2,31 +2,27 @@
 using System.Collections.Generic;
 using MySql.Data.MySqlClient;
 
-namespace Turbosms.Client.Models
+namespace Turbosms.Client
 {
-    public class SQLSMSSender
+    public class SqlSender : ISender
     {
         public string Exceptions { get; set; }
-        
-        private MySqlConnection _connection;
-        private readonly string _login;
-        private readonly string _password;
-        private readonly string _database;
-        private readonly string _server;
 
-        public SQLSMSSender(string server,string database, string login, string password)
+        private readonly string _login;
+        private MySqlConnection _connection;
+        private readonly MessageFactory _messageFactory;
+
+        public SqlSender(string server, string database, string login, string password)
         {
-            _server = server;
-            _database = database;
             _login = login;
-            _password = password;
-            
-            var connectionString = $"SERVER={_server};DATABASE={_database};UID={_login};PASSWORD={_password};";
-            
+            _messageFactory = new MessageFactory();
+
+            var connectionString = $"SERVER={server};DATABASE={database};UID={_login};PASSWORD={password};";
+
             Initialize(connectionString);
         }
 
-        public SQLSMSSender(string connectionString)
+        public SqlSender(string connectionString)
         {
             Initialize(connectionString);
         }
@@ -57,6 +53,7 @@ namespace Turbosms.Client.Models
                         Exceptions = "Invalid username/password, please try again";
                         break;
                 }
+
                 return false;
             }
         }
@@ -76,20 +73,21 @@ namespace Turbosms.Client.Models
         }
 
 
-        public int SendMessage(string receiver,string sender, string message)
+        public int SendMessage(string receiver, string sender, string message)
         {
-            int id=-1;
-            SMSModel sms = new SMSModel()
+            var id = -1;
+            
+            var sms = new Message()
             {
                 number = receiver,
                 message = message,
                 sign = sender,
-                send_time = DateTime.Now.AddMinutes(3).ToString(SMSModel.DateTimeFormat)
+                send_time = DateTime.Now.AddMinutes(3).ToString(Message.DateTimeFormat)
             };
-            string query = string.Format(
-                "INSERT INTO {0} (number, message, sign) VALUES('{1}', '{2}', '{3}'); "+
-                "SELECT LAST_INSERT_ID();",
-                _login,sms.number, sms.message, sms.sign);
+            
+            var query =
+                $"INSERT INTO {_login} (number, message, sign) VALUES('{sms.number}', '{sms.message}', '{sms.sign}'); " +
+                "SELECT LAST_INSERT_ID();";
 
             if (this.OpenConnection() == true)
             {
@@ -99,62 +97,70 @@ namespace Turbosms.Client.Models
                 {
                     id = int.Parse(cmd.ExecuteScalar().ToString());
                 }
-                catch {
+                catch
+                {
                 }
-                this.CloseConnection();
+
+                CloseConnection();
             }
+
             return id;
         }
 
-        public List<SMSModel> GetSMSDetail(int? smsid = null)
+        public List<Message> GetSMSDetail(int? smsid = null)
         {
-            string query = string.Format( "SELECT * FROM {0}", _login);
-            if (smsid!=null) 
+            string query = $"SELECT * FROM {_login}";
+            
+            if (smsid != null)
             {
-                query += string.Format(" where id = '{0}'", smsid);
+                query += $" where id = '{smsid}'";
             }
 
-            List<SMSModel> list = new List<SMSModel>();
+            var list = new List<Message>();
 
-            if (this.OpenConnection() == true)
+            if (OpenConnection())
             {
-                MySqlCommand cmd = new MySqlCommand(query, _connection);
-                MySqlDataReader dataReader = cmd.ExecuteReader();
+                var command = new MySqlCommand(query, _connection);
+                var dataReader = command.ExecuteReader();
 
                 while (dataReader.Read())
                 {
-                    SMSModel sms = new SMSModel(dataReader);
-                    list.Add(sms);
+                    list.Add(_messageFactory.Create(dataReader));
                 }
+
                 dataReader.Close();
 
-                this.CloseConnection();
+                CloseConnection();
 
                 return list;
             }
-            else
-            {
-                return list;
-            }
+
+            return list;
         }
 
-        public decimal GetBalance() 
+        public decimal GetBalance()
         {
             decimal balance = 0;
 
-            if (this.OpenConnection()) 
+            if (OpenConnection())
             {
-                string query = string.Format(
-                    @"select balance from {0} 
+                var query = $@"select balance from {_login} 
                         where msg_id IS NOT NULL 
                         order by id desc
-                        LIMIT 1", _login);
-                MySqlCommand cmd = new MySqlCommand(query, _connection);
-                 try{
-                     var val = cmd.ExecuteScalar().ToString();
-                     balance =decimal.Parse(val);
-                }catch{}
+                        LIMIT 1";
+                
+                var command = new MySqlCommand(query, _connection);
+                
+                try
+                {
+                    var val = command.ExecuteScalar().ToString();
+                    balance = decimal.Parse(val);
+                }
+                catch
+                {
+                }
             }
+
             return balance;
         }
     }

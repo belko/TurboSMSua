@@ -1,6 +1,6 @@
 ﻿namespace Turbosms.Client
 {
-    public enum SMSStatus
+    public enum Status
     {
         NULL,
         ACCEPTD,
